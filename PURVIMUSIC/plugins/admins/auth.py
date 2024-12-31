@@ -14,18 +14,18 @@ from PURVIMUSIC.utils.inline import close_markup
 from config import BANNED_USERS, adminlist
 
 
-@app.on_message(filters.command("auth") & filters.group & ~BANNED_USERS)
+@app.on_message(filters.command("auth", "") & filters.group & ~BANNED_USERS)
 @AdminActual
 async def auth(client, message: Message, _):
     if not message.reply_to_message:
         if len(message.command) != 2:
-            return await message.reply_text(_["general_1"])
+            return await message.reply_text("لطفا دستور را به درستی وارد کنید")
     user = await extract_user(message)
     token = await int_to_alpha(user.id)
     _check = await get_authuser_names(message.chat.id)
     count = len(_check)
     if int(count) == 25:
-        return await message.reply_text(_["auth_1"])
+        return await message.reply_text("حداکثر تعداد کاربران مجاز (25) به این گروه اضافه شده‌اند")
     if token not in _check:
         assis = {
             "auth_user_id": user.id,
@@ -38,17 +38,17 @@ async def auth(client, message: Message, _):
             if user.id not in get:
                 get.append(user.id)
         await save_authuser(message.chat.id, token, assis)
-        return await message.reply_text(_["auth_2"].format(user.mention))
+        return await message.reply_text(f"{user.mention} با موفقیت به لیست کاربران مجاز اضافه شد")
     else:
-        return await message.reply_text(_["auth_3"].format(user.mention))
+        return await message.reply_text(f"{user.mention} از قبل در لیست کاربران مجاز قرار دارد")
 
 
-@app.on_message(filters.command("unauth") & filters.group & ~BANNED_USERS)
+@app.on_message(filters.command("unauth", "") & filters.group & ~BANNED_USERS)
 @AdminActual
 async def unauthusers(client, message: Message, _):
     if not message.reply_to_message:
         if len(message.command) != 2:
-            return await message.reply_text(_["general_1"])
+            return await message.reply_text("لطفا دستور را به درستی وارد کنید")
     user = await extract_user(message)
     token = await int_to_alpha(user.id)
     deleted = await delete_authuser(message.chat.id, token)
@@ -57,23 +57,23 @@ async def unauthusers(client, message: Message, _):
         if user.id in get:
             get.remove(user.id)
     if deleted:
-        return await message.reply_text(_["auth_4"].format(user.mention))
+        return await message.reply_text(f"{user.mention} از لیست کاربران مجاز حذف شد")
     else:
-        return await message.reply_text(_["auth_5"].format(user.mention))
+        return await message.reply_text(f"{user.mention} در لیست کاربران مجاز وجود ندارد")
 
 
 @app.on_message(
-    filters.command(["authlist", "authusers"]) & filters.group & ~BANNED_USERS
+    filters.command(["authlist", "authusers"], "") & filters.group & ~BANNED_USERS
 )
 @language
 async def authusers(client, message: Message, _):
     _wtf = await get_authuser_names(message.chat.id)
     if not _wtf:
-        return await message.reply_text(_["setting_4"])
+        return await message.reply_text("هیچ کاربر مجازی در این گروه وجود ندارد")
     else:
         j = 0
-        mystic = await message.reply_text(_["auth_6"])
-        text = _["auth_7"].format(message.chat.title)
+        mystic = await message.reply_text("در حال دریافت لیست کاربران مجاز...")
+        text = f"لیست کاربران مجاز در {message.chat.title}:\n\n"
         for umm in _wtf:
             _umm = await get_authuser(message.chat.id, umm)
             user_id = _umm["auth_user_id"]
@@ -85,6 +85,5 @@ async def authusers(client, message: Message, _):
             except:
                 continue
             text += f"{j}➤ {user}[<code>{user_id}</code>]\n"
-            text += f"   {_['auth_8']} {admin_name}[<code>{admin_id}</code>]\n\n"
+            text += f"   توسط ادمین: {admin_name}[<code>{admin_id}</code>]\n\n"
         await mystic.edit_text(text, reply_markup=close_markup(_))
-    
